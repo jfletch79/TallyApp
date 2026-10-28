@@ -35,7 +35,7 @@ app-tally/
 
 **Name:** Tally Web App
 
-**Description:** Single-page, mobile-first tally counter. A 2×2 grid of four color-coded quadrant tiles (A–D); tapping a tile increments its count, shown under the letter. Each tile has a deliberately small, low-contrast "−" button (top-right corner) that undoes the most recent tap and is disabled at zero. The bottom action bar provides **Reset** (confirmation prompt; zeroes counts and clears history) and **Generate Report** (downloads the CSV and opens a preview modal with Copy CSV / Save CSV / Done).
+**Description:** Single-page, mobile-first tally counter. A 2×2 grid of four color-coded quadrant tiles (A–D); tapping a tile increments its count, shown under the letter, and the header shows the running total across all quadrants. Each tile has a deliberately small, low-contrast "−" button (top-right corner) that undoes the most recent tap and is disabled at zero. Quadrants can be given custom labels (up to 20 characters) via a gear icon in the action bar; the label shows on the tile, appears in the CSV export, and survives resets. The bottom action bar provides **Configure** (gear icon), **Reset** (confirmation prompt; zeroes counts and clears history but keeps labels), and **Generate Report** (downloads the CSV and opens a preview modal with Copy CSV / Save CSV / Done).
 
 **Technologies:** Vanilla HTML5, CSS3 (CSS Grid, custom properties, `100dvh`, `env(safe-area-inset-*)`, `clamp()`, system font stack), ES2020+ JavaScript (IIFE, strict mode). No frameworks, no dependencies, no build step.
 
@@ -57,7 +57,7 @@ None — this is a backend-free, client-only application.
 
 **Purpose:** Persists quadrant counts and the full click history across sessions on the user's device, so tallies survive page reloads and browser restarts.
 
-**Key Schemas / Collections:** Single JSON value under key `app-tally-v1`: `counts` (integers per quadrant A–D) and `log` (per-quadrant array of `[timestampMs, runningCount]` pairs, oldest first, capped at the 10,000 most recent entries per quadrant — 40,000 total).
+**Key Schemas / Collections:** Single JSON value under key `app-tally-v1`: `counts` (integers per quadrant A–D), `names` (optional label per quadrant, up to 20 characters — absent in state saved before the labeling feature), and `log` (per-quadrant array of `[timestampMs, runningCount]` pairs, oldest first, capped at the 10,000 most recent entries per quadrant — 40,000 total).
 
 ## 5. External Integrations / APIs
 
@@ -93,7 +93,8 @@ None. The app makes no network calls and uses no third-party services; all data 
 
 ## 9. Future Considerations / Roadmap
 
-- Editable quadrant subtitles — short labels under each A–D letter — are planned but not started (the only known future work; no other planned changes or architectural technical debt).
+- The original roadmap item — editable quadrant subtitles — is now implemented as the quadrant-label feature (labels under each A–D letter, set via the settings modal).
+- No other planned changes; no known architectural technical debt.
 
 ## 10. Project Identification
 

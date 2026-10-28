@@ -6,12 +6,13 @@ No build step, no dependencies, no backend — everything runs in the browser an
 
 ## Features
 
-- Four large, color-coded quadrant tiles: **A** (blue), **B** (green), **C** (amber), **D** (red)
-- Tap a quadrant to increment its tally; the running count is displayed under the letter
+- Four large, color-coded quadrant tiles: **A** (dusty rose), **B** (sage), **C** (goldenrod), **D** (blue)
+- Tap a quadrant to increment its tally; the running count is displayed under the letter, and the running total across all quadrants is shown top-right in the header
+- Each quadrant can be given a custom label (up to 20 characters) via the **gear icon** in the action bar; the label is shown on the tile and in CSV exports
 - Each quadrant has a discreet **−** button (top-right corner of the tile) that undoes the most recent tap — deliberately small and low-contrast so it can't be hit by accident
 - Counts persist across sessions via `localStorage` on the device
 - Cross-tab sync: multiple open tabs on the same device stay in sync automatically
-- **Reset** (bottom left) zeroes all counters — with a confirmation prompt — and clears the saved click history
+- **Reset** zeroes all counters — with a confirmation prompt — and clears the saved click history, but keeps custom quadrant names
 - **Generate Report** (bottom right) downloads a CSV of every recorded click, and also shows a preview of the CSV with **Copy CSV** and **Save CSV** buttons — so you always get the data, even in browsers that block file downloads
 
 ## Storage and limits
@@ -28,12 +29,13 @@ The report file is named `tally-report-YYYY-MM-DD-HHMM.csv` and contains two sec
 Section 1 — one row per recorded click, in chronological order:
 
 ```csv
-quadrant,date_local,time_local,running_count
-A,10/27/2026,15:42:11,1
-A,10/27/2026,15:45:02,2
-B,10/27/2026,16:01:10,1
+quadrant,quadrant_name,date_local,time_local,running_count
+A,Meetings,10/27/2026,15:42:11,1
+A,Meetings,10/27/2026,15:45:02,2
+B,,10/27/2026,16:01:10,1
 ```
 
+- `quadrant_name` is the custom label (up to 20 characters) set for that quadrant via the gear icon, or empty if the quadrant has no label.
 - `date_local` is the **device's local date** (not UTC), formatted as `M/D/YYYY`.
 - `time_local` is the **device's local time** (not UTC), in 24-hour format `HH:MM:SS` (e.g., `20:30:11` = 8:30:11 pm) — handy for plotting histograms and line charts directly.
 - `running_count` is the quadrant's total after that click, so you can plot the running total over time directly.
@@ -42,11 +44,11 @@ B,10/27/2026,16:01:10,1
 Section 2 — final counts per quadrant, after a blank line:
 
 ```csv
-quadrant,final_count
-A,2
-B,1
-C,0
-D,0
+quadrant,quadrant_name,final_count
+A,Meetings,2
+B,,1
+C,,0
+D,,0
 ```
 
 ## Running locally

@@ -10,9 +10,11 @@
   const STORAGE_KEY = "app-tally-v1";
   const QUADRANTS = ["A", "B", "C", "D"];
   const MAX_LOG_PER_QUADRANT = 10000; // most recent clicks kept per quadrant
+  const MAX_NAME_LENGTH = 20; // max characters per quadrant name
 
   const state = {
     counts: { A: 0, B: 0, C: 0, D: 0 },
+    names: { A: "", B: "", C: "", D: "" },
     // log[q] is a list of [timestampMs, runningCount] entries, oldest first.
     log: { A: [], B: [], C: [], D: [] },
   };
@@ -22,6 +24,7 @@
   function freshState() {
     return {
       counts: { A: 0, B: 0, C: 0, D: 0 },
+      names: { A: "", B: "", C: "", D: "" },
       log: { A: [], B: [], C: [], D: [] },
     };
   }
@@ -48,6 +51,12 @@
       const count = Number((parsed && parsed.counts && parsed.counts[q]) || 0);
       next.counts[q] = Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0;
 
+      // Names are optional and may be absent in older saved state.
+      const rawName = parsed && parsed.names && parsed.names[q];
+      const name = typeof rawName === "string" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : "";
+      if (typeof rawName === "string" && name !== rawName) normalized = true;
+      next.names[q] = name;
+
       const entries = parsed && parsed.log && parsed.log[q];
       if (Array.isArray(entries)) {
         for (const entry of entries) {
@@ -69,6 +78,7 @@
       }
     }
     state.counts = next.counts;
+    state.names = next.names;
     state.log = next.log;
     if (normalized) save(); // persist the trimmed/validated state
   }
@@ -105,12 +115,13 @@
 
   function resetAll() {
     const confirmed = window.confirm(
-      "Reset all four counters to zero?\nThis also clears the click history saved on this device."
+      "Reset all four counters to zero?\nThis also clears the click history saved on this device. Quadrant names are kept."
     );
     if (!confirmed) return;
     const fresh = freshState();
     state.counts = fresh.counts;
     state.log = fresh.log;
+    // state.names intentionally preserved: reset clears tallies, not labels.
     save();
     render();
   }
@@ -147,14 +158,14 @@
       (a, b) => a.ts - b.ts || QUADRANTS.indexOf(a.q) - QUADRANTS.indexOf(b.q)
     );
 
-    const lines = ["quadrant,date_local,time_local,running_count"];
+    const lines = ["quadrant,quadrant_name,date_local,time_local,running_count"];
     for (const c of clicks) {
-      lines.push([c.q, toLocalDate(c.ts), toLocalTime(c.ts), c.count].map(csvCell).join(","));
+      lines.push([c.q, state.names[c.q], toLocalDate(c.ts), toLocalTime(c.ts), c.count].map(csvCell).join(","));
     }
     lines.push("");
-    lines.push("quadrant,final_count");
+    lines.push("quadrant,quadrant_name,final_count");
     for (const q of QUADRANTS) {
-      lines.push(q + "," + state.counts[q]);
+      lines.push([q, state.names[q], state.counts[q]].map(csvCell).join(","));
     }
     return lines.join("\r\n") + "\r\n";
   }
@@ -241,18 +252,58 @@
     openReportModal(csv, downloaded);
   }
 
+  let settingsModal = null;
+  let settingsSaveBtn = null;
+  const nameInputs = {};
+
+  function openSettings() {
+    for (const q of QUADRANTS) {
+      nameInputs[q].value = state.names[q];
+    }
+    settingsModal.hidden = false;
+    lastFocused = document.activeElement;
+    settingsSaveBtn.focus();
+  }
+
+  function closeSettings() {
+    settingsModal.hidden = true;
+    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+    lastFocused = null;
+  }
+
+  function saveNames() {
+    let changed = false;
+    for (const q of QUADRANTS) {
+      const value = nameInputs[q].value.trim().slice(0, MAX_NAME_LENGTH);
+      if (value !== state.names[q]) {
+        state.names[q] = value;
+        changed = true;
+      }
+    }
+    if (changed) save();
+    render();
+    closeSettings();
+  }
+
   /* ---------- Rendering and wiring ---------- */
 
   const countEls = {};
+  const nameEls = {};
   const decrementEls = {};
+  let totalEl = null;
 
   function render() {
+    let total = 0;
     for (const q of QUADRANTS) {
       const countEl = countEls[q];
       if (countEl) countEl.textContent = String(state.counts[q]);
+      const nameEl = nameEls[q];
+      if (nameEl) nameEl.textContent = state.names[q];
       const decEl = decrementEls[q];
       if (decEl) decEl.disabled = state.counts[q] <= 0;
+      total += state.counts[q];
     }
+    if (totalEl) totalEl.textContent = "Total: " + total;
   }
 
   function init() {
@@ -262,6 +313,7 @@
       const tile = document.querySelector('.tile[data-quadrant="' + q + '"]');
       if (!tile) continue;
       countEls[q] = tile.querySelector(".count");
+      nameEls[q] = tile.querySelector(".quadrant-name");
       decrementEls[q] = tile.querySelector(".tile-decrement");
       tile.querySelector(".tile-hit").addEventListener("click", () => increment(q));
       decrementEls[q].addEventListener("click", (event) => {
@@ -270,6 +322,12 @@
       });
     }
 
+    totalEl = document.getElementById("total-display");
+    settingsModal = document.getElementById("settings-modal");
+    settingsSaveBtn = document.getElementById("settings-save-btn");
+    for (const q of QUADRANTS) {
+      nameInputs[q] = document.getElementById("name-input-" + q.toLowerCase());
+    }
     reportModal = document.getElementById("report-modal");
     reportNote = document.getElementById("report-modal-note");
     reportText = document.getElementById("report-text");
@@ -281,6 +339,14 @@
     document.getElementById("report-save-btn").addEventListener("click", () => {
       tryDownloadCsv(reportText.value);
     });
+    document.getElementById("settings-btn").addEventListener("click", openSettings);
+    document.getElementById("settings-save-btn").addEventListener("click", saveNames);
+    document.getElementById("settings-cancel-btn").addEventListener("click", closeSettings);
+    if (settingsModal) {
+      settingsModal.addEventListener("click", (event) => {
+        if (event.target === settingsModal) closeSettings();
+      });
+    }
     if (reportModal) {
       reportCopyBtn.addEventListener("click", copyReportText);
       reportDoneBtn.addEventListener("click", closeReportModal);
@@ -290,7 +356,9 @@
       });
     }
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && reportModal && !reportModal.hidden) closeReportModal();
+      if (event.key !== "Escape") return;
+      if (reportModal && !reportModal.hidden) closeReportModal();
+      if (settingsModal && !settingsModal.hidden) closeSettings();
     });
 
     // Cross-tab sync: the "storage" event fires only in *other* tabs, so the

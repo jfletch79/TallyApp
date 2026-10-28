@@ -1,10 +1,10 @@
 /* Tally — four-quadrant counter, mobile-first. */
 
 :root {
-  --color-a: #3b82f6; /* blue    */
-  --color-b: #10b981; /* emerald */
-  --color-c: #f59e0b; /* amber   */
-  --color-d: #ef4444; /* red     */
+  --color-a: #b6545f; /* dusty rose      */
+  --color-b: #5c7a63; /* sage            */
+  --color-c: #9a6e0d; /* dark goldenrod  */
+  --color-d: #4f6bb5; /* periwinkle blue */
   --bg: #f1f5f9;
   --ink: #0f172a;
   --ink-soft: #64748b;
@@ -60,6 +60,9 @@ body {
 .app-header .hint {
   font-size: 0.8rem;
   color: var(--ink-soft);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .grid {
@@ -87,7 +90,7 @@ body {
   gap: 10px;
   border: 0;
   border-radius: var(--radius);
-  color: #fff;
+  color: var(--tile-ink, #ffffff);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
@@ -106,6 +109,8 @@ body {
   outline-offset: -5px;
 }
 
+/* All quadrant colors pass WCAG AA against white text. Tiles with a
+   future lighter color can override --tile-ink to var(--ink). */
 .tile[data-quadrant="A"] .tile-hit { background: var(--color-a); }
 .tile[data-quadrant="B"] .tile-hit { background: var(--color-b); }
 .tile[data-quadrant="C"] .tile-hit { background: var(--color-c); }
@@ -116,6 +121,20 @@ body {
   font-weight: 800;
   line-height: 1;
   opacity: 0.95;
+}
+
+.quadrant-name {
+  display: none;
+  max-width: 92%;
+  font-size: clamp(0.85rem, 3.4vw, 1.1rem);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+.quadrant-name:not(:empty) {
+  display: block;
 }
 
 .count {
@@ -164,9 +183,39 @@ body {
 
 .actions {
   display: grid;
-  grid-template-columns: 1fr 1.35fr;
+  grid-template-columns: auto 1fr 1.35fr;
   gap: var(--gap);
   padding-top: 4px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #e2e8f0;
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 60ms ease, filter 60ms ease;
+}
+
+.icon-btn:active {
+  transform: scale(0.98);
+  filter: brightness(0.96);
+}
+
+.icon-btn:focus-visible {
+  outline: 3px solid var(--color-a);
+  outline-offset: 2px;
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .action-btn {
@@ -205,7 +254,7 @@ body {
 
 /* ---------- Report modal (download fallback / CSV preview) ---------- */
 
-.report-modal {
+.modal {
   position: fixed;
   inset: 0;
   z-index: 10;
@@ -216,11 +265,11 @@ body {
   background: rgba(15, 23, 42, 0.45);
 }
 
-.report-modal[hidden] {
+.modal[hidden] {
   display: none;
 }
 
-.report-modal-card {
+.modal-card {
   width: 100%;
   max-width: 480px;
   max-height: 85vh;
@@ -234,15 +283,57 @@ body {
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
 }
 
-.report-modal-card h2 {
+.modal-card h2 {
   margin: 0;
   font-size: 1.1rem;
 }
 
-.report-modal-note {
+.modal-note {
   margin: 0;
   font-size: 0.85rem;
   color: var(--ink-soft);
+}
+
+/* ---------- Quadrant-name settings ---------- */
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.settings-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.settings-letter[data-quadrant="A"] { background: var(--color-a); }
+.settings-letter[data-quadrant="B"] { background: var(--color-b); }
+.settings-letter[data-quadrant="C"] { background: var(--color-c); }
+.settings-letter[data-quadrant="D"] { background: var(--color-d); }
+
+#settings-modal input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--ink);
 }
 
 #report-text {
@@ -259,17 +350,17 @@ body {
   color: var(--ink);
 }
 
-.report-modal-actions {
+.modal-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.report-modal-actions .action-btn {
+.modal-actions .action-btn {
   padding: 12px 10px;
   font-size: 0.9rem;
 }
 
-.report-modal-actions .action-btn-primary {
+.modal-actions .action-btn-primary {
   grid-column: 1 / -1;
 }
