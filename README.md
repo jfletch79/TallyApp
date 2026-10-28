@@ -28,13 +28,14 @@ The report file is named `tally-report-YYYY-MM-DD-HHMM.csv` and contains two sec
 Section 1 — one row per recorded click, in chronological order:
 
 ```csv
-quadrant,timestamp_local,running_count
-A,10/27/2026 3:42:11 PM,1
-A,10/27/2026 3:45:02 PM,2
-B,10/27/2026 4:01:10 PM,1
+quadrant,date_local,time_local,running_count
+A,10/27/2026,15:42:11,1
+A,10/27/2026,15:45:02,2
+B,10/27/2026,16:01:10,1
 ```
 
-- `timestamp_local` is the **device's local time** (not UTC), formatted as `M/D/YYYY h:mm:ss AM/PM`.
+- `date_local` is the **device's local date** (not UTC), formatted as `M/D/YYYY`.
+- `time_local` is the **device's local time** (not UTC), in 24-hour format `HH:MM:SS` (e.g., `20:30:11` = 8:30:11 pm) — handy for plotting histograms and line charts directly.
 - `running_count` is the quadrant's total after that click, so you can plot the running total over time directly.
 - Undoing a tap (−) removes that click from the history, so the report reflects only effective clicks.
 

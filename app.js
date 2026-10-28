@@ -117,16 +117,18 @@
 
   /* ---------- CSV report ---------- */
 
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  // Device-local date as M/D/YYYY (e.g., 10/27/2026).
+  function toLocalDate(ts) {
+    const d = new Date(ts);
+    return d.getMonth() + 1 + "/" + pad2(d.getDate()) + "/" + d.getFullYear();
+  }
+
+  // Device-local time in 24-hour format as HH:MM:SS (e.g., 20:30:11).
   function toLocalTime(ts) {
     const d = new Date(ts);
-    const pad = (n) => String(n).padStart(2, "0");
-    let hour = d.getHours();
-    const meridiem = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12 || 12;
-    return (
-      d.getMonth() + 1 + "/" + pad(d.getDate()) + "/" + d.getFullYear() + " " +
-      pad(hour) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()) + " " + meridiem
-    );
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
   }
 
   function csvCell(value) {
@@ -145,9 +147,9 @@
       (a, b) => a.ts - b.ts || QUADRANTS.indexOf(a.q) - QUADRANTS.indexOf(b.q)
     );
 
-    const lines = ["quadrant,timestamp_local,running_count"];
+    const lines = ["quadrant,date_local,time_local,running_count"];
     for (const c of clicks) {
-      lines.push([c.q, toLocalTime(c.ts), c.count].map(csvCell).join(","));
+      lines.push([c.q, toLocalDate(c.ts), toLocalTime(c.ts), c.count].map(csvCell).join(","));
     }
     lines.push("");
     lines.push("quadrant,final_count");
